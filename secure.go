@@ -1,12 +1,12 @@
-package main
+package secure
 
 import (
-	"./controller"
-	"./model"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"net/http"
+	"secure/controller"
+	"secure/model"
 )
 
 func main() {

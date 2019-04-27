@@ -1,11 +1,11 @@
 package controller
 
 import (
-	"../model"
 	"encoding/json"
 	"github.com/jinzhu/gorm"
 	"github.com/satori/go.uuid"
 	"net/http"
+	"secure/model"
 )
 
 type loginParams struct {
@@ -21,10 +21,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	db, err := gorm.Open("sqlite3", "test.db")
-	if err != nil {
-		panic("failed to connect database")
-	}
+	db := db()
 	defer db.Close()
 
 	var user model.User
@@ -61,17 +58,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func Create(w http.ResponseWriter, r *http.Request) {
-	decoder := json.NewDecoder(r.Body)
 	var params loginParams
-	err := decoder.Decode(&params)
+	err := json.Unmarshal(r.Body, params)
 	if err != nil {
 		panic(err)
 	}
 
-	db, err := gorm.Open("sqlite3", "test.db")
-	if err != nil {
-		panic("failed to connect database")
-	}
+	db := db()
 	defer db.Close()
 
 	user := model.User{Username: params.Username}
@@ -79,9 +72,14 @@ func Create(w http.ResponseWriter, r *http.Request) {
 	db.Create(&user)
 
 	payload := make(map[string]string)
-	payload["username"] = user.Username
-	payload["message"] = "User created"
+	payload, err = json.Marshal(user)
+	if err != nil {
+		panic(err)
+	}
+	w.Write(payload)
+}
 
-	data, err := json.Marshal(payload)
-	w.Write(data)
+func db() gorm.DB {
+	db, err := gorm.Open("sqlite3", "test.db")
+	return db
 }

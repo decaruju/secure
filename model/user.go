@@ -5,6 +5,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var COST = 10
+
 type User struct {
 	gorm.Model
 	Username       string `gorm:"unique_index"`
@@ -16,11 +18,7 @@ func (user *User) CheckPassword(password string) error {
 }
 
 func (user *User) CreatePassword(password string) error {
-	newHash, err := bcrypt.GenerateFromPassword([]byte(password), 16)
-	if err != nil {
-		return err
-	}
-
+	newHash, _ := bcrypt.GenerateFromPassword([]byte(password), COST)
 	user.HashedPassword = string(newHash)
 	return nil
 }
@@ -31,11 +29,7 @@ func (user *User) UpdatePassword(oldPassword string, newPassword string) error {
 		return err
 	}
 
-	newHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), 16)
-	if err != nil {
-		return err
-	}
-
+	newHash, _ := bcrypt.GenerateFromPassword([]byte(newPassword), COST)
 	user.HashedPassword = string(newHash)
 	return nil
 }
