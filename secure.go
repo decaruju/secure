@@ -1,6 +1,7 @@
-package secure
+package main
 
 import (
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
@@ -19,8 +20,8 @@ func main() {
 	db.AutoMigrate(&model.ApiKey{})
 
 	router := mux.NewRouter()
-	router.HandleFunc("/users/login", controller.Login).Methods("POST")
-	router.HandleFunc("/users", controller.Create).Methods("POST")
+	router.HandleFunc("/users/login", controller.Login)
+	router.HandleFunc("/users", controller.Create)
 	http.Handle("/", router)
-	http.ListenAndServe(":8080", nil)
+	fmt.Println(http.ListenAndServe(":8081", nil))
 }
