@@ -2,7 +2,7 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	"github.com/satori/go.uuid"
 	"io/ioutil"
@@ -15,33 +15,39 @@ type loginParams struct {
 	Password string
 }
 
+func UsersRouter(router *mux.Router) {
+	s := router.PathPrefix("/users").Subrouter()
+	s.HandleFunc("/login", Cors(Login)).Methods("POST")
+	s.HandleFunc("", Cors(CreateUser)).Methods("POST")
+}
+
 func Login(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Origin, Content-Type")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
 	decoder := json.NewDecoder(r.Body)
 	var params loginParams
 	err := decoder.Decode(&params)
 	if err != nil {
-		panic(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
-	db := db()
+	db, err := db()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	defer db.Close()
 
 	var user model.User
 	db.Where("username = ?", params.Username).First(&user)
 
 	if &user == nil {
-		panic("User does not exist")
+		w.WriteHeader(http.StatusForbidden)
+		return
 	}
 
 	err = user.CheckPassword(params.Password)
 	if err != nil {
-		w.Write([]byte("Wrong password"))
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
@@ -49,7 +55,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	key, err := uuid.NewV4()
 	if err != nil {
-		panic(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	apiKey := model.ApiKey{
@@ -60,24 +67,26 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	db.Create(&apiKey)
 	payload := make(map[string]string)
 	payload["key"] = apiKey.Key
-	payload["message"] = "LoginSuccessful"
 
 	data, err := json.Marshal(payload)
 	w.Write(data)
 }
 
-func Create(w http.ResponseWriter, r *http.Request) {
+func CreateUser(w http.ResponseWriter, r *http.Request) {
 	var params loginParams
 	body, _ := ioutil.ReadAll(r.Body)
 	err := json.Unmarshal(body, &params)
-	if err != nil {
-		fmt.Println(err)
-		w.Write([]byte("Error"))
+	if err != nil || params.Username == "" || params.Password == "" {
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	db := db()
+	db, err := db()
 	defer db.Close()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	user := model.User{Username: params.Username}
 	user.CreatePassword(params.Password)
@@ -85,12 +94,13 @@ func Create(w http.ResponseWriter, r *http.Request) {
 
 	payload, err := json.Marshal(user)
 	if err != nil {
-		panic(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	w.Write(payload)
 }
 
-func db() *gorm.DB {
-	db, _ := gorm.Open("sqlite3", "test.db")
-	return db
+func db() (*gorm.DB, error) {
+	db, err := gorm.Open("sqlite3", "test.db")
+	return db, err
 }

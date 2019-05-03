@@ -20,8 +20,10 @@ func main() {
 	db.AutoMigrate(&model.ApiKey{})
 
 	router := mux.NewRouter()
-	router.HandleFunc("/users/login", controller.Login)
-	router.HandleFunc("/users", controller.Create)
+	controller.UsersRouter(router)
+
+	router.PathPrefix("/").Methods("OPTIONS").HandlerFunc(controller.Cors(controller.OptionsHandler))
+
 	http.Handle("/", router)
 	fmt.Println(http.ListenAndServe(":8081", nil))
 }
