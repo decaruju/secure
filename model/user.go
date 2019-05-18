@@ -1,14 +1,13 @@
 package model
 
 import (
-	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var COST = 10
 
 type User struct {
-	gorm.Model
+	ID             uint   `gorm:"primary_key"`
 	Username       string `gorm:"unique_index"`
 	HashedPassword string
 }

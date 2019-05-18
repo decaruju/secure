@@ -1,11 +1,7 @@
 package model
 
-import (
-	"github.com/jinzhu/gorm"
-)
-
-type ApiKey struct {
-	gorm.Model
+type Apikey struct {
+	ID     uint `gorm:"primary_key"`
 	Key    string
 	UserID uint `gorm:"index"`
 	User   User `gorm:"foreignkey:UserId"`

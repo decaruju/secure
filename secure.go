@@ -17,7 +17,7 @@ func main() {
 	}
 	defer db.Close()
 	db.AutoMigrate(&model.User{})
-	db.AutoMigrate(&model.ApiKey{})
+	db.AutoMigrate(&model.Apikey{})
 
 	router := mux.NewRouter()
 	controller.UsersRouter(router)
